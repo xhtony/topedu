@@ -4,7 +4,7 @@ import * as cookieParser from 'cookie-parser';
 
 export function configureApp(app: INestApplication) {
   const configService = app.get(ConfigService);
-  const frontendOrigin = configService.get<string>('FRONTEND_ORIGIN', 'http://localhost:5500');
+  const frontendOrigin = configService.get<string>('FRONTEND_ORIGIN', 'https://topedu.co.nz');
 
   app.setGlobalPrefix('api');
   app.use(cookieParser());
