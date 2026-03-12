@@ -33,25 +33,23 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date) {
+  private getRefreshCookieOptions(expiresAt?: Date) {
     const isProd = this.configService.get<string>('NODE_ENV') === 'production';
-    res.cookie('refreshToken', refreshToken, {
+    return {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
       expires: expiresAt,
       path: '/api/auth',
-    });
+    };
+  }
+
+  private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date) {
+    res.cookie('refreshToken', refreshToken, this.getRefreshCookieOptions(expiresAt));
   }
 
   private clearRefreshTokenCookie(res: Response) {
-    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',
-      path: '/api/auth',
-    });
+    res.clearCookie('refreshToken', this.getRefreshCookieOptions());
   }
 
   @Post('register')
