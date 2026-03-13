@@ -23,6 +23,8 @@ export class UsersService {
         email: data.email.toLowerCase().trim(),
         name: data.name.trim(),
         passwordHash: data.passwordHash,
+        role: 'USER',
+        mustChangePassword: false,
         emailVerified: false,
       },
     });

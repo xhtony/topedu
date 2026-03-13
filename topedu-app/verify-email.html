@@ -1,0 +1,85 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<title>Verify Email - TOP EDU</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+<link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<link rel="stylesheet" href="css/font-awesome.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/color.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="as-mainwrapper">
+  <div class="bg-white">
+    <div class="contact-area section-padding">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3">
+            <div class="contact-form text-center">
+              <div class="single-title">
+                <h3>Email Verification</h3>
+              </div>
+              <p id="verify-message" class="form-messege">Verifying your email, please wait...</p>
+              <p style="margin-top: 20px;">
+                <a href="login.html">Go to Login</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/vendor/jquery-1.12.4.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+  (function (window, $) {
+    "use strict";
+
+    function getQueryParam(name) {
+      var query = window.location.search.substring(1);
+      var pairs = query ? query.split("&") : [];
+      for (var i = 0; i < pairs.length; i += 1) {
+        var item = pairs[i].split("=");
+        if (decodeURIComponent(item[0]) === name) {
+          return decodeURIComponent((item[1] || "").replace(/\+/g, " "));
+        }
+      }
+      return "";
+    }
+
+    function setMessage(message, isError) {
+      var $message = $("#verify-message");
+      $message.removeClass("success error");
+      $message.addClass(isError ? "error" : "success");
+      $message.text(message);
+    }
+
+    var token = getQueryParam("token");
+    if (!token) {
+      setMessage("Invalid verification link. Missing token.", true);
+      return;
+    }
+
+    window.ApiClient.post("/auth/verify-email", { token: token }, { skipAuth: true })
+      .done(function (response) {
+        var payload = response && response.data ? response.data : response;
+        setMessage((payload && payload.message) || "Email verified successfully.", false);
+      })
+      .fail(function (xhr) {
+        var msg = (xhr.responseJSON && xhr.responseJSON.message) || "Email verification failed.";
+        if (Array.isArray(msg)) {
+          msg = msg.join(", ");
+        }
+        setMessage(msg, true);
+      });
+  })(window, jQuery);
+</script>
+</body>
+</html>

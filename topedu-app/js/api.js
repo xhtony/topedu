@@ -113,6 +113,13 @@
                 data: data
             }));
         },
+        patch: function (url, data, options) {
+            return request($.extend({}, options || {}, {
+                method: "PATCH",
+                url: url,
+                data: data
+            }));
+        },
         del: function (url, data, options) {
             return request($.extend({}, options || {}, {
                 method: "DELETE",

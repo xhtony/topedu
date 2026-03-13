@@ -1,12 +1,15 @@
 import {
   BadRequestException,
   Injectable,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
@@ -18,7 +21,11 @@ import { createHash, randomBytes } from 'crypto';
 import { SignOptions } from 'jsonwebtoken';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private static readonly ADMIN_NAME = 'admin';
+  private static readonly ADMIN_EMAIL = 'topedu.co.nz@gmail.com';
+  private static readonly ADMIN_INITIAL_PASSWORD = '88888888';
+
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
@@ -26,6 +33,10 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
   ) {}
+
+  async onModuleInit() {
+    await this.ensureAdminAccount();
+  }
 
   private getAccessExpiresIn(): string {
     return this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', '15m');
@@ -75,13 +86,52 @@ export class AuthService {
     return createHash('sha256').update(rawToken).digest('hex');
   }
 
-  private sanitizeUser(user: { id: string; email: string; name: string; emailVerified: boolean }) {
+  private sanitizeUser(user: {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    mustChangePassword: boolean;
+    emailVerified: boolean;
+  }) {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
       emailVerified: user.emailVerified,
     };
+  }
+
+  private async ensureAdminAccount() {
+    const email = AuthService.ADMIN_EMAIL.toLowerCase().trim();
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!existing) {
+      const passwordHash = await bcrypt.hash(AuthService.ADMIN_INITIAL_PASSWORD, 12);
+      await this.prisma.user.create({
+        data: {
+          name: AuthService.ADMIN_NAME,
+          email,
+          passwordHash,
+          role: 'ADMIN',
+          mustChangePassword: true,
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+      });
+      return;
+    }
+
+    if (existing.role !== 'ADMIN') {
+      await this.prisma.user.update({
+        where: { id: existing.id },
+        data: { role: 'ADMIN' },
+      });
+    }
   }
 
   private getEmailVerificationExpiryDate() {
@@ -98,22 +148,59 @@ export class AuthService {
   }
 
   private async createEmailVerificationToken(userId: string) {
-    await this.prisma.emailVerificationToken.updateMany({
-      where: { userId, usedAt: null },
-      data: { usedAt: new Date() },
-    });
-
     const rawToken = randomBytes(32).toString('hex');
     const expiresAt = this.getEmailVerificationExpiryDate();
-    await this.prisma.emailVerificationToken.create({
-      data: {
-        userId,
-        tokenHash: this.hashToken(rawToken),
-        expiresAt,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      await tx.emailVerificationToken.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+
+      await tx.emailVerificationToken.create({
+        data: {
+          userId,
+          tokenHash: this.hashToken(rawToken),
+          expiresAt,
+        },
+      });
     });
 
     return { rawToken, expiresAt };
+  }
+
+  private async createRefreshTokenRecord(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+    metadata: { ip?: string; userAgent?: string },
+  ) {
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      await tx.refreshToken.create({
+        data: {
+          userId,
+          tokenHash,
+          expiresAt,
+          userAgent: metadata.userAgent,
+          ipAddress: metadata.ip,
+        },
+      });
+    });
   }
 
   private async sendEmailVerification(email: string, rawToken: string) {
@@ -166,7 +253,7 @@ export class AuthService {
 
   async verifyEmail(dto: VerifyEmailDto) {
     const tokenHash = this.hashToken(dto.token.trim());
-    const storedToken = await this.prisma.emailVerificationToken.findUnique({
+    const storedToken = await this.prisma.emailVerificationToken.findFirst({
       where: { tokenHash },
     });
 
@@ -252,15 +339,7 @@ export class AuthService {
     const refreshTokenHash = this.hashToken(refreshToken);
     const refreshTokenExpiresAt = this.getRefreshExpiryDate();
 
-    await this.prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: refreshTokenHash,
-        expiresAt: refreshTokenExpiresAt,
-        userAgent: metadata.userAgent,
-        ipAddress: metadata.ip,
-      },
-    });
+    await this.createRefreshTokenRecord(user.id, refreshTokenHash, refreshTokenExpiresAt, metadata);
 
     return {
       accessToken,
@@ -268,6 +347,32 @@ export class AuthService {
       refreshTokenExpiresAt,
       user: this.sanitizeUser(user),
     };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const validCurrent = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!validCurrent) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException('New password must be different from current password');
+    }
+
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: newPasswordHash,
+        mustChangePassword: false,
+      },
+    });
+
+    return { success: true, message: 'Password updated successfully' };
   }
 
   async refresh(refreshToken: string, metadata: { ip?: string; userAgent?: string }) {
@@ -316,15 +421,12 @@ export class AuthService {
     const newRefreshToken = await this.signRefreshToken(newPayload);
     const newRefreshExpiresAt = this.getRefreshExpiryDate();
 
-    await this.prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: this.hashToken(newRefreshToken),
-        expiresAt: newRefreshExpiresAt,
-        userAgent: metadata.userAgent,
-        ipAddress: metadata.ip,
-      },
-    });
+    await this.createRefreshTokenRecord(
+      user.id,
+      this.hashToken(newRefreshToken),
+      newRefreshExpiresAt,
+      metadata,
+    );
 
     return {
       accessToken,

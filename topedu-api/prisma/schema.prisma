@@ -3,9 +3,41 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
+  relationMode = "prisma"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum WeekType {
+  THIS_WEEK
+  NEXT_WEEK
+}
+
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+enum TimeSlot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum SelectionStatus {
+  PENDING
+  APPROVED
 }
 
 model User {
@@ -13,12 +45,15 @@ model User {
   email         String         @unique
   passwordHash  String         @map("password_hash")
   name          String
+  role          UserRole       @default(USER)
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
   emailVerified Boolean        @default(false) @map("email_verified")
   emailVerifiedAt DateTime?    @map("email_verified_at")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   refreshTokens RefreshToken[]
   emailVerificationTokens EmailVerificationToken[]
+  courseSelections CourseSelection[]
 
   @@map("users")
 }
@@ -53,4 +88,56 @@ model RefreshToken {
   @@index([userId], map: "idx_refresh_tokens_user_id")
   @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
   @@map("refresh_tokens")
+}
+
+model CourseSlot {
+  id          String          @id @default(uuid())
+  moduleId    String?         @map("module_id")
+  weekType    WeekType        @map("week_type")
+  weekday     Weekday
+  timeSlot    TimeSlot        @map("time_slot")
+  weekOffset  Int?            @map("week_offset")
+  weekdayIndex Int?           @map("weekday_index")
+  startMinute Int?            @map("start_minute")
+  endMinute   Int?            @map("end_minute")
+  courseName  String          @map("course_name")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  selections  CourseSelection[]
+
+  @@unique([weekOffset, weekdayIndex, startMinute, endMinute], map: "uq_course_slots_week_day_time")
+  @@index([weekOffset], map: "idx_course_slots_week_offset")
+  @@index([moduleId], map: "idx_course_slots_module_id")
+  @@map("course_slots")
+}
+
+model TimetableModule {
+  id        String   @id @default(uuid())
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  rows      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([startDate], map: "idx_timetable_modules_start_date")
+  @@index([endDate], map: "idx_timetable_modules_end_date")
+  @@map("timetable_modules")
+}
+
+model CourseSelection {
+  id         String          @id @default(uuid())
+  userId     String          @map("user_id")
+  courseSlotId String        @map("course_slot_id")
+  status     SelectionStatus @default(PENDING)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseSlot CourseSlot      @relation(fields: [courseSlotId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseSlotId], map: "uq_course_selections_user_slot")
+  @@index([userId], map: "idx_course_selections_user_id")
+  @@index([courseSlotId], map: "idx_course_selections_slot_id")
+  @@map("course_selections")
 }

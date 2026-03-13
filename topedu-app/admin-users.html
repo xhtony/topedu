@@ -1,0 +1,119 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<title>Admin Center - TOP EDU</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+<link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<link rel="stylesheet" href="css/font-awesome.min.css">
+<link rel="stylesheet" href="css/meanmenu.min.css">
+<link rel="stylesheet" href="css/animate.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/color.css">
+<link rel="stylesheet" href="css/responsive.css">
+<script src="js/vendor/modernizr-2.8.3.min.js"></script>
+</head>
+<body data-require-auth="true" data-require-admin="true">
+<div class="as-mainwrapper">
+  <div class="bg-white">
+    <div class="contact-area section-padding" id="admin-center-page">
+      <div class="container">
+        <h2>Admin Center</h2>
+        <p>
+          <a href="index.html">Back to Home</a>
+        </p>
+
+        <ul class="nav nav-tabs" role="tablist" style="margin-bottom: 20px;">
+          <li role="presentation" class="active">
+            <a href="#admin-users-tab" aria-controls="admin-users-tab" role="tab" data-toggle="tab">User List</a>
+          </li>
+          <li role="presentation">
+            <a href="#admin-timetable-tab" aria-controls="admin-timetable-tab" role="tab" data-toggle="tab">Timetable Editor</a>
+          </li>
+          <li role="presentation">
+            <a href="#admin-courses-tab" aria-controls="admin-courses-tab" role="tab" data-toggle="tab">Course List</a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane active" id="admin-users-tab">
+            <div id="admin-users-page">
+              <div class="row" style="margin-bottom: 15px;">
+                <div class="col-sm-8">
+                  <input id="admin-search-email" class="form-control" placeholder="Search by user email">
+                </div>
+                <div class="col-sm-4">
+                  <button id="admin-search-btn" class="button-default" type="button">Search</button>
+                </div>
+              </div>
+              <p id="admin-users-message" class="form-messege"></p>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Email Verified</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div role="tabpanel" class="tab-pane" id="admin-timetable-tab">
+            <div id="admin-timetable-page">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <h3 style="margin:0;">Date Range Modules</h3>
+                <button id="admin-add-module-btn" type="button" class="button-default">+</button>
+              </div>
+              <p id="admin-timetable-message" class="form-messege"></p>
+              <div id="admin-timetable-modules"></div>
+              <p style="font-size: 12px; color: #666;">Time range must be between 06:00 and 18:00.</p>
+            </div>
+          </div>
+
+          <div role="tabpanel" class="tab-pane" id="admin-courses-tab">
+            <div id="admin-courses-page">
+              <div class="row" style="margin-bottom: 15px;">
+                <div class="col-sm-8">
+                  <input id="admin-course-name" class="form-control" placeholder="Course name">
+                </div>
+                <div class="col-sm-4">
+                  <button id="admin-course-add-btn" class="button-default" type="button">Add Course</button>
+                </div>
+              </div>
+              <p id="admin-courses-message" class="form-messege"></p>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Course Name</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-courses-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/vendor/jquery-1.12.4.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/jquery.meanmenu.js"></script>
+<script src="js/wow.min.js"></script>
+<script src="js/jquery.scrollUp.min.js"></script>
+<script src="js/plugins.js"></script>
+<script src="js/styleswitch.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
