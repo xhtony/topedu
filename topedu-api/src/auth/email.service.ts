@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { lookup } from 'node:dns/promises';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
@@ -14,28 +15,32 @@ export class EmailService {
     return value;
   }
 
-  private createTransport() {
+  private async createTransport() {
     const host = this.getRequiredEnv('SMTP_HOST');
     const port = Number(this.configService.get<string>('SMTP_PORT', '587'));
     const secure = this.configService.get<string>('SMTP_SECURE', 'false') === 'true';
     const user = this.getRequiredEnv('SMTP_USER');
     const pass = this.getRequiredEnv('SMTP_PASS');
+    const resolved = await lookup(host, { family: 4 });
 
     return nodemailer.createTransport({
-      host,
+      host: resolved.address,
       port,
       secure,
       auth: {
         user,
         pass,
       },
-      family: 4,
+      tls: {
+        // Keep the original hostname for TLS certificate validation.
+        servername: host,
+      },
     });
   }
 
   async sendEmailVerification(email: string, verificationLink: string) {
     const from = this.getRequiredEnv('SMTP_FROM');
-    const transporter = this.createTransport();
+    const transporter = await this.createTransport();
 
     await transporter.sendMail({
       from,
