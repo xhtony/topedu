@@ -8,6 +8,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
+    "postinstall": "prisma generate",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "prisma:generate": "prisma generate",
@@ -15,6 +16,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@nestjs/cli": "^11.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
