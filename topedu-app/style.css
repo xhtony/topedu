@@ -2246,6 +2246,52 @@ span.c-text {display: inline-block;}
 }
 .contact-form-area .button-default:hover {background: #2d3e50 none repeat scroll 0 0;}
 /*----------------------------------------*/
+/*  Auth Forms (Login/Register)
+/*----------------------------------------*/
+body[data-auth-page="login"] .form-container input,
+body[data-auth-page="register"] .form-container input {
+    background: transparent;
+    border: 1px solid rgba(45, 62, 80, 0.35);
+    color: #2d3e50;
+    caret-color: #2d3e50;
+    height: 44px;
+    margin-bottom: 12px;
+    padding: 0 14px;
+    position: relative;
+    z-index: 5;
+    width: 100%;
+}
+body[data-auth-page="login"] .form-container input:focus,
+body[data-auth-page="register"] .form-container input:focus {
+    border-color: #07439D;
+    box-shadow: none;
+    outline: none;
+}
+body[data-auth-page="login"] .form-container input::placeholder,
+body[data-auth-page="register"] .form-container input::placeholder {
+    color: rgba(45, 62, 80, 0.75);
+}
+body[data-auth-page="register"] .form-container input:-webkit-autofill,
+body[data-auth-page="register"] .form-container input:-webkit-autofill:hover,
+body[data-auth-page="register"] .form-container input:-webkit-autofill:focus,
+body[data-auth-page="register"] .form-container input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: #2d3e50 !important;
+    caret-color: #2d3e50;
+    transition: background-color 9999s ease-out 0s;
+}
+body[data-auth-page="login"] .form-container input:-webkit-autofill,
+body[data-auth-page="login"] .form-container input:-webkit-autofill:hover,
+body[data-auth-page="login"] .form-container input:-webkit-autofill:focus,
+body[data-auth-page="login"] .form-container input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: #2d3e50 !important;
+    caret-color: #2d3e50;
+    transition: background-color 9999s ease-out 0s;
+}
+/*----------------------------------------*/
 /*  24. About Page
 /*----------------------------------------*/
 .teachers-area.padding-top {padding: 120px 0 140px;}
