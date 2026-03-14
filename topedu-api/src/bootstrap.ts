@@ -16,7 +16,10 @@ export function configureApp(app: INestApplication) {
     }),
   );
   app.enableCors({
-    origin: frontendOrigin,
+    origin: [
+      "https://topedu.co.nz",
+      "https://www.topedu.co.nz"
+    ],
     credentials: true,
   });
 }
