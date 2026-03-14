@@ -1,9 +1,10 @@
 #!/bin/bash
-set -e
+set -exo pipefail
 
 npm config set registry https://registry.npmmirror.com
 npm install
 npx nest build
+npx prisma generate
 
 # 打印详细目录结构（关键！找 main.js 实际位置）
 echo "=== 打印 topedu-api 根目录 ==="
