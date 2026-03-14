@@ -29,6 +29,7 @@ export class EmailService {
         user,
         pass,
       },
+      family: 4,
     });
   }
 
