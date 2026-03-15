@@ -36,4 +36,21 @@ export class EmailService {
       `,
     });
   }
+
+  async sendPasswordResetCode(email: string, code: string) {
+    this.configureSendGrid();
+    const from = this.getRequiredEnv('SENDGRID_FROM_EMAIL');
+
+    await sgMail.send({
+      to: email,
+      from,
+      subject: 'TopEdu password reset verification code',
+      text: `Your TopEdu password reset verification code is: ${code}\n\nIf you did not request a password reset, you can ignore this email.`,
+      html: `
+        <p>Your TopEdu password reset verification code is:</p>
+        <p style="font-size: 22px; font-weight: bold; letter-spacing: 2px;">${code}</p>
+        <p>If you did not request a password reset, you can ignore this email.</p>
+      `,
+    });
+  }
 }

@@ -172,6 +172,18 @@
         });
     }
 
+    function forgotPassword(payload) {
+        return api.post("/auth/forgot-password", payload, { skipAuth: true }).then(function (response) {
+            return normalizePayload(response);
+        });
+    }
+
+    function resetPassword(payload) {
+        return api.post("/auth/reset-password", payload, { skipAuth: true }).then(function (response) {
+            return normalizePayload(response);
+        });
+    }
+
     function logout() {
         return api.post("/auth/logout", {}, {}).always(function () {
             clearAuth();
@@ -382,6 +394,111 @@
                 })
                 .fail(function (xhr) {
                     var msg = (xhr.responseJSON && xhr.responseJSON.message) || "Failed to update password.";
+                    if (Array.isArray(msg)) {
+                        msg = msg.join(", ");
+                    }
+                    showMessage($message, msg, true);
+                });
+        });
+    }
+
+    function bindResetPasswordPage() {
+        var $form = $("#reset-password-form");
+        if (!$form.length) {
+            return;
+        }
+        var $message = $("#auth-message");
+        var $sendCodeBtn = $("#reset-password-send-code-btn");
+        var countdownTimer = null;
+        var countdownLeft = 0;
+        var defaultBtnText = $.trim($sendCodeBtn.text()) || "Get code";
+
+        function stopCountdown() {
+            if (countdownTimer) {
+                window.clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            countdownLeft = 0;
+            $sendCodeBtn.prop("disabled", false).text(defaultBtnText);
+        }
+
+        function startCountdown(seconds) {
+            stopCountdown();
+            countdownLeft = seconds;
+            $sendCodeBtn.prop("disabled", true).text(defaultBtnText + " (" + countdownLeft + "s)");
+            countdownTimer = window.setInterval(function () {
+                countdownLeft -= 1;
+                if (countdownLeft <= 0) {
+                    stopCountdown();
+                    return;
+                }
+                $sendCodeBtn.text(defaultBtnText + " (" + countdownLeft + "s)");
+            }, 1000);
+        }
+
+        $sendCodeBtn.on("click", function () {
+            if ($sendCodeBtn.prop("disabled")) {
+                return;
+            }
+            var email = $.trim($("#reset-password-email").val());
+            if (!email) {
+                showMessage($message, "Please enter your email first.", true);
+                return;
+            }
+
+            forgotPassword({ email: email })
+                .done(function (payload) {
+                    var msg = (payload && payload.message) || "Verification code sent to your email.";
+                    showMessage($message, msg, false);
+                    startCountdown(90);
+                })
+                .fail(function (xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) || "Failed to send verification code.";
+                    if (Array.isArray(msg)) {
+                        msg = msg.join(", ");
+                    }
+                    showMessage($message, msg, true);
+                });
+        });
+
+        $form.on("submit", function (event) {
+            event.preventDefault();
+            var email = $.trim($("#reset-password-email").val());
+            var code = $.trim($("#reset-password-code").val());
+            var newPassword = $("#reset-password-new").val();
+            var confirmPassword = $("#reset-password-confirm").val();
+
+            if (!email || !code || !newPassword || !confirmPassword) {
+                showMessage($message, "Please fill in all fields.", true);
+                return;
+            }
+            if (!/^\d{6}$/.test(code)) {
+                showMessage($message, "Please enter a valid 6-digit verification code.", true);
+                return;
+            }
+            if (newPassword.length < 8) {
+                showMessage($message, "Password must be at least 8 characters.", true);
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showMessage($message, "Passwords do not match.", true);
+                return;
+            }
+
+            resetPassword({
+                email: email,
+                code: code,
+                newPassword: newPassword
+            })
+                .done(function (payload) {
+                    var msg = (payload && payload.message) || "Password reset successful.";
+                    showMessage($message, msg + " Redirecting to login...", false);
+                    window.setTimeout(function () {
+                        window.location.href = "login.html";
+                    }, 1200);
+                })
+                .fail(function (xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) || "Failed to reset password.";
                     if (Array.isArray(msg)) {
                         msg = msg.join(", ");
                     }
@@ -1183,6 +1300,7 @@
         bindLoginForm();
         bindRegisterForm();
         bindChangePasswordForm();
+        bindResetPasswordPage();
         bindStudentDashboardPage();
         bindAdminUsersPage();
         bindAdminUserDetailPage();
@@ -1210,6 +1328,8 @@
     window.AuthService = {
         login: login,
         register: register,
+        forgotPassword: forgotPassword,
+        resetPassword: resetPassword,
         logout: logout,
         refresh: refresh,
         me: me,

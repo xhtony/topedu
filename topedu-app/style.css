@@ -2249,7 +2249,8 @@ span.c-text {display: inline-block;}
 /*  Auth Forms (Login/Register)
 /*----------------------------------------*/
 body[data-auth-page="login"] .form-container input,
-body[data-auth-page="register"] .form-container input {
+body[data-auth-page="register"] .form-container input,
+body[data-auth-page="reset-password"] .form-container input {
     background: transparent;
     border: 1px solid rgba(45, 62, 80, 0.35);
     color: #2d3e50;
@@ -2262,19 +2263,25 @@ body[data-auth-page="register"] .form-container input {
     width: 100%;
 }
 body[data-auth-page="login"] .form-container input:focus,
-body[data-auth-page="register"] .form-container input:focus {
+body[data-auth-page="register"] .form-container input:focus,
+body[data-auth-page="reset-password"] .form-container input:focus {
     border-color: #07439D;
     box-shadow: none;
     outline: none;
 }
 body[data-auth-page="login"] .form-container input::placeholder,
-body[data-auth-page="register"] .form-container input::placeholder {
+body[data-auth-page="register"] .form-container input::placeholder,
+body[data-auth-page="reset-password"] .form-container input::placeholder {
     color: rgba(45, 62, 80, 0.75);
 }
 body[data-auth-page="register"] .form-container input:-webkit-autofill,
 body[data-auth-page="register"] .form-container input:-webkit-autofill:hover,
 body[data-auth-page="register"] .form-container input:-webkit-autofill:focus,
-body[data-auth-page="register"] .form-container input:-webkit-autofill:active {
+body[data-auth-page="register"] .form-container input:-webkit-autofill:active,
+body[data-auth-page="reset-password"] .form-container input:-webkit-autofill,
+body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:hover,
+body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:focus,
+body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
     box-shadow: 0 0 0 1000px transparent inset !important;
     -webkit-text-fill-color: #2d3e50 !important;
@@ -2604,3 +2611,12 @@ body[data-auth-page="login"] .form-container input:-webkit-autofill:active {
 .block.padding .btn-group {margin-bottom: 22px;}
 .btn-toolbar.padding {margin-bottom: 20px;}
 .btn-toolbar.padding:nth-last-of-type(1) {margin-bottom: 0;}
+
+/* Auth message colors */
+.form-messege.error {
+    color: #d9534f !important;
+}
+
+.form-messege.success {
+    color: #2f8f46 !important;
+}

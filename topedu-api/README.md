@@ -28,6 +28,8 @@ Copy `.env.example` to `.env` and set values:
 - `JWT_REFRESH_SECRET`
 - `FRONTEND_ORIGIN`
 - `EMAIL_VERIFICATION_BASE_URL`
+- `PASSWORD_RESET_EXPIRES_IN_MINUTES`
+- `PASSWORD_RESET_RESEND_COOLDOWN_SECONDS`
 - `SENDGRID_API_KEY`
 - `SENDGRID_FROM_EMAIL`
 
@@ -53,6 +55,8 @@ This API matches the frontend calls in `topedu-app/js/auth.js`:
 - `POST /api/auth/register`
 - `POST /api/auth/verify-email`
 - `POST /api/auth/resend-verification`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
 - `POST /api/auth/login`
 - `POST /api/auth/change-password`
 - `POST /api/auth/refresh`
@@ -82,6 +86,7 @@ This API matches the frontend calls in `topedu-app/js/auth.js`:
 ## SendGrid API notes
 
 - Email verification is sent using SendGrid API (`@sendgrid/mail`)
+- Password reset code is sent using SendGrid API (`@sendgrid/mail`)
 - Set `SENDGRID_API_KEY` to a SendGrid API key with Mail Send permission
 - `SENDGRID_FROM_EMAIL` must be a verified sender in SendGrid
 

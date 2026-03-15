@@ -10,14 +10,16 @@ import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { EmailService } from './email.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { SignOptions } from 'jsonwebtoken';
 
 @Injectable()
@@ -54,6 +56,14 @@ export class AuthService implements OnModuleInit {
     return Number(
       this.configService.get<string>('EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS', '60'),
     );
+  }
+
+  private getPasswordResetExpiresInMinutes(): number {
+    return Number(this.configService.get<string>('PASSWORD_RESET_EXPIRES_IN_MINUTES', '10'));
+  }
+
+  private getPasswordResetResendCooldownSeconds(): number {
+    return Number(this.configService.get<string>('PASSWORD_RESET_RESEND_COOLDOWN_SECONDS', '60'));
   }
 
   private getEmailVerificationBaseUrl(): string {
@@ -229,6 +239,45 @@ export class AuthService implements OnModuleInit {
     return expiry;
   }
 
+  private getPasswordResetExpiryDate() {
+    const expiresInMinutes = this.getPasswordResetExpiresInMinutes();
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + expiresInMinutes);
+    return expiry;
+  }
+
+  private generatePasswordResetCode() {
+    return String(randomInt(0, 1000000)).padStart(6, '0');
+  }
+
+  private async createPasswordResetCode(userId: string) {
+    const rawCode = this.generatePasswordResetCode();
+    const expiresAt = this.getPasswordResetExpiryDate();
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      await tx.passwordResetToken.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+
+      await tx.passwordResetToken.create({
+        data: {
+          userId,
+          tokenHash: this.hashToken(rawCode),
+          expiresAt,
+        },
+      });
+    });
+    return { rawCode, expiresAt };
+  }
+
   async register(dto: RegisterDto) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
@@ -312,6 +361,88 @@ export class AuthService implements OnModuleInit {
     await this.sendEmailVerification(user.email, rawToken);
 
     return { success: true, message: 'Verification email sent' };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user || !user.emailVerified) {
+      return {
+        success: true,
+        message: 'If the account exists, a verification code has been sent.',
+      };
+    }
+
+    const latestActiveCode = await this.prisma.passwordResetToken.findFirst({
+      where: { userId: user.id, usedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (latestActiveCode) {
+      const cooldownMs = this.getPasswordResetResendCooldownSeconds() * 1000;
+      const availableAt = latestActiveCode.createdAt.getTime() + cooldownMs;
+      if (availableAt > Date.now()) {
+        throw new BadRequestException('Please wait before requesting another code');
+      }
+    }
+
+    const { rawCode } = await this.createPasswordResetCode(user.id);
+    await this.emailService.sendPasswordResetCode(user.email, rawCode);
+
+    return {
+      success: true,
+      message: 'If the account exists, a verification code has been sent.',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const email = dto.email.toLowerCase().trim();
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException('Invalid verification code or email');
+    }
+
+    const codeHash = this.hashToken(dto.code.trim());
+    const token = await this.prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        tokenHash: codeHash,
+        usedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!token || token.expiresAt.getTime() <= Date.now()) {
+      throw new BadRequestException('Verification code is invalid or expired');
+    }
+
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 12);
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash: newPasswordHash,
+          mustChangePassword: false,
+        },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: token.id },
+        data: { usedAt: now },
+      }),
+      this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: user.id,
+          usedAt: null,
+          NOT: { id: token.id },
+        },
+        data: { usedAt: now },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+    ]);
+
+    return { success: true, message: 'Password reset successful. Please login again.' };
   }
 
   async login(dto: LoginDto, metadata: { ip?: string; userAgent?: string }) {
