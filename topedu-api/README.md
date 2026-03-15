@@ -28,12 +28,8 @@ Copy `.env.example` to `.env` and set values:
 - `JWT_REFRESH_SECRET`
 - `FRONTEND_ORIGIN`
 - `EMAIL_VERIFICATION_BASE_URL`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_SECURE`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `SMTP_FROM`
+- `SENDGRID_API_KEY`
+- `SENDGRID_FROM_EMAIL`
 
 ## 3) Create DB tables
 
@@ -83,11 +79,11 @@ This API matches the frontend calls in `topedu-app/js/auth.js`:
 - Path is `/api/auth`
 - In production, cookie is `secure: true`
 
-## SMTP notes
+## SendGrid API notes
 
-- Email verification is sent via SMTP using `nodemailer`
-- `SMTP_SECURE=true` is usually used with port `465`
-- `SMTP_SECURE=false` is usually used with port `587`
+- Email verification is sent using SendGrid API (`@sendgrid/mail`)
+- Set `SENDGRID_API_KEY` to a SendGrid API key with Mail Send permission
+- `SENDGRID_FROM_EMAIL` must be a verified sender in SendGrid
 
 ## Deploy on Vercel + MySQL
 

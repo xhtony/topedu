@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { lookup } from 'node:dns/promises';
-import * as nodemailer from 'nodemailer';
+import * as sgMail from '@sendgrid/mail';
 
 @Injectable()
 export class EmailService {
@@ -15,36 +14,18 @@ export class EmailService {
     return value;
   }
 
-  private async createTransport() {
-    const host = this.getRequiredEnv('SMTP_HOST');
-    const port = Number(this.configService.get<string>('SMTP_PORT', '587'));
-    const secure = this.configService.get<string>('SMTP_SECURE', 'false') === 'true';
-    const user = this.getRequiredEnv('SMTP_USER');
-    const pass = this.getRequiredEnv('SMTP_PASS');
-    const resolved = await lookup(host, { family: 4 });
-
-    return nodemailer.createTransport({
-      host: resolved.address,
-      port,
-      secure,
-      auth: {
-        user,
-        pass,
-      },
-      tls: {
-        // Keep the original hostname for TLS certificate validation.
-        servername: host,
-      },
-    });
+  private configureSendGrid() {
+    const apiKey = this.getRequiredEnv('SENDGRID_API_KEY');
+    sgMail.setApiKey(apiKey);
   }
 
   async sendEmailVerification(email: string, verificationLink: string) {
-    const from = this.getRequiredEnv('SMTP_FROM');
-    const transporter = await this.createTransport();
+    this.configureSendGrid();
+    const from = this.getRequiredEnv('SENDGRID_FROM_EMAIL');
 
-    await transporter.sendMail({
-      from,
+    await sgMail.send({
       to: email,
+      from,
       subject: 'Verify your TopEdu email',
       text: `Welcome to TopEdu!\n\nPlease verify your email by opening this link:\n${verificationLink}\n\nIf you did not create this account, you can ignore this email.`,
       html: `
