@@ -5,8 +5,14 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByEmail(email: string) {
+  findByUsername(username: string) {
     return this.prisma.user.findUnique({
+      where: { username: username.trim() },
+    });
+  }
+
+  findByEmail(email: string) {
+    return this.prisma.user.findFirst({
       where: { email: email.toLowerCase().trim() },
     });
   }
@@ -14,19 +20,6 @@ export class UsersService {
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-    });
-  }
-
-  create(data: { email: string; name: string; passwordHash: string }) {
-    return this.prisma.user.create({
-      data: {
-        email: data.email.toLowerCase().trim(),
-        name: data.name.trim(),
-        passwordHash: data.passwordHash,
-        role: 'USER',
-        mustChangePassword: false,
-        emailVerified: false,
-      },
     });
   }
 }

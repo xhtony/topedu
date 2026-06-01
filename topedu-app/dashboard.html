@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
-<title>Student Dashboard - TOP EDU</title>
+<title>My Account - TOP EDU</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
 <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
 <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -47,14 +47,34 @@
 
     <div class="breadcrumb-banner-area">
       <div class="container">
-        <h1 class="text-center">Student Dashboard</h1>
+        <h1 class="text-center">My Account</h1>
       </div>
     </div>
 
     <div class="contact-area section-padding" id="student-dashboard">
       <div class="container">
+        <p id="dashboard-account-actions" style="margin-bottom: 16px;">
+          <a href="change-password.html" class="button-default" style="display: inline-block; padding: 8px 18px; font-size: 14px;">Update Password</a>
+        </p>
         <p id="dashboard-message" class="form-messege"></p>
-        <div id="student-modules"></div>
+        <div id="student-wallet-strip"></div>
+        <ul class="nav nav-tabs" role="tablist" style="margin-bottom: 15px;">
+          <li role="presentation" class="active">
+            <a href="#student-tab-timetable" aria-controls="student-tab-timetable" role="tab" data-toggle="tab">Timetable</a>
+          </li>
+          <li role="presentation">
+            <a href="#student-tab-sessions" aria-controls="student-tab-sessions" role="tab" data-toggle="tab">Session list</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane active" id="student-tab-timetable">
+            <div id="student-modules"></div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="student-tab-sessions">
+            <p class="text-muted" style="font-size:13px;margin-bottom:12px;">All scheduled class dates in your modules: sign-in (✓), missed (✗), leave, upcoming (grey), or today before day end (open).</p>
+            <div id="student-session-list"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

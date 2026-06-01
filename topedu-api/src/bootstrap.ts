@@ -18,7 +18,8 @@ export function configureApp(app: INestApplication) {
   app.enableCors({
     origin: [
       "https://topedu.co.nz",
-      "https://www.topedu.co.nz"
+      "https://www.topedu.co.nz",
+      "http://localhost:5500"
     ],
     credentials: true,
   });

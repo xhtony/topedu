@@ -10,79 +10,92 @@ datasource db {
 }
 
 enum UserRole {
-  USER
   ADMIN
+  TEACHER
+  STUDENT
 }
 
-enum WeekType {
-  THIS_WEEK
-  NEXT_WEEK
+enum Currency {
+  CNY
+  NZD
 }
 
-enum Weekday {
-  MON
-  TUE
-  WED
-  THU
-  FRI
-  SAT
-  SUN
+enum CourseType {
+  GROUP
+  PRIVATE
 }
 
-enum TimeSlot {
-  MORNING
-  AFTERNOON
-  EVENING
+enum RecordSource {
+  STUDENT
+  ADMIN
+  SYSTEM
 }
 
-enum SelectionStatus {
+enum WalletRecordType {
+  RECHARGE
+  REVERSAL
+}
+
+enum BillingSelectionReason {
+  REQUESTED
+  ONLY_CNY_WALLET
+  ONLY_NZD_WALLET
+  SUFFICIENT_BALANCE_CNY
+  SUFFICIENT_BALANCE_NZD
+  MAX_REMAINING_CNY
+  MAX_REMAINING_NZD
+  MIN_OVERDRAFT_CNY
+  MIN_OVERDRAFT_NZD
+  WALLET_CURRENCY_DEFAULT
+  FALLBACK_CNY
+}
+
+enum EnrollmentStatus {
   PENDING
   APPROVED
+  REJECTED
+  ENDED
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String         @map("password_hash")
-  name          String
-  role          UserRole       @default(USER)
-  mustChangePassword Boolean   @default(false) @map("must_change_password")
-  emailVerified Boolean        @default(false) @map("email_verified")
-  emailVerifiedAt DateTime?    @map("email_verified_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  refreshTokens RefreshToken[]
-  emailVerificationTokens EmailVerificationToken[]
+  id                 String    @id @default(uuid())
+  username           String    @unique
+  email              String?
+  passwordHash       String    @map("password_hash")
+  name               String
+  role               UserRole  @default(STUDENT)
+  gender             String?
+  walletCurrency     Currency? @map("wallet_currency")
+  prepaymentCny      Decimal   @default(0) @map("prepayment_cny") @db.Decimal(10, 2)
+  prepaymentNzd      Decimal   @default(0) @map("prepayment_nzd") @db.Decimal(10, 2)
+  balanceCny         Decimal   @default(0) @map("balance_cny") @db.Decimal(10, 2)
+  balanceNzd         Decimal   @default(0) @map("balance_nzd") @db.Decimal(10, 2)
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
-  courseSelections CourseSelection[]
+  taughtCourses       Course[]       @relation("TeacherCourses")
+  enrollments         Enrollment[]
+  attendances         Attendance[]
+  attendancesCreated  Attendance[]     @relation("AttendanceCreatedBy")
+  leaveRequests       LeaveRequest[]
+  rechargeRecords     RechargeRecord[] @relation("StudentRecharges")
+  rechargesCreated    RechargeRecord[] @relation("AdminRecharges")
 
   @@map("users")
 }
 
-model EmailVerificationToken {
+model RefreshToken {
   id        String    @id @default(uuid())
   userId    String    @map("user_id")
   tokenHash String    @unique @map("token_hash")
   expiresAt DateTime  @map("expires_at")
-  usedAt    DateTime? @map("used_at")
+  revokedAt DateTime? @map("revoked_at")
   createdAt DateTime  @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId], map: "idx_email_verification_tokens_user_id")
-  @@index([expiresAt], map: "idx_email_verification_tokens_expires_at")
-  @@map("email_verification_tokens")
-}
-
-model RefreshToken {
-  id         String    @id @default(uuid())
-  userId     String    @map("user_id")
-  tokenHash  String    @unique @map("token_hash")
-  expiresAt  DateTime  @map("expires_at")
-  revokedAt  DateTime? @map("revoked_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  userAgent  String?   @map("user_agent")
-  ipAddress  String?   @map("ip_address")
+  userAgent String?   @map("user_agent")
+  ipAddress String?   @map("ip_address")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -106,54 +119,142 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-model CourseSlot {
-  id          String          @id @default(uuid())
-  moduleId    String?         @map("module_id")
-  weekType    WeekType        @map("week_type")
-  weekday     Weekday
-  timeSlot    TimeSlot        @map("time_slot")
-  weekOffset  Int?            @map("week_offset")
-  weekdayIndex Int?           @map("weekday_index")
-  startMinute Int?            @map("start_minute")
-  endMinute   Int?            @map("end_minute")
-  courseName  String          @map("course_name")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+model Course {
+  id        String     @id @default(uuid())
+  name      String
+  type      CourseType @default(GROUP)
+  feeCny    Decimal    @default(0) @db.Decimal(10, 2) @map("fee_cny")
+  feeNzd    Decimal    @default(0) @db.Decimal(10, 2) @map("fee_nzd")
+  teacherId String     @map("teacher_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
-  selections  CourseSelection[]
+  teacher       User           @relation("TeacherCourses", fields: [teacherId], references: [id])
+  scheduleSlots ScheduleSlot[]
 
-  @@unique([weekOffset, weekdayIndex, startMinute, endMinute], map: "uq_course_slots_week_day_time")
-  @@index([weekOffset], map: "idx_course_slots_week_offset")
-  @@index([moduleId], map: "idx_course_slots_module_id")
-  @@map("course_slots")
+  @@index([teacherId], map: "idx_courses_teacher_id")
+  @@map("courses")
 }
 
 model TimetableModule {
   id        String   @id @default(uuid())
+  name      String?
   startDate DateTime @map("start_date")
   endDate   DateTime @map("end_date")
-  rows      Json
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  scheduleSlots ScheduleSlot[]
 
   @@index([startDate], map: "idx_timetable_modules_start_date")
   @@index([endDate], map: "idx_timetable_modules_end_date")
   @@map("timetable_modules")
 }
 
-model CourseSelection {
-  id         String          @id @default(uuid())
-  userId     String          @map("user_id")
-  courseSlotId String        @map("course_slot_id")
-  status     SelectionStatus @default(PENDING)
-  createdAt  DateTime        @default(now()) @map("created_at")
-  updatedAt  DateTime        @updatedAt @map("updated_at")
+model ScheduleSlot {
+  id          String   @id @default(uuid())
+  moduleId    String   @map("module_id")
+  weekday     Int
+  startMinute Int      @map("start_minute")
+  endMinute   Int      @map("end_minute")
+  courseId     String   @map("course_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseSlot CourseSlot      @relation(fields: [courseSlotId], references: [id], onDelete: Cascade)
+  module      TimetableModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  course      Course          @relation(fields: [courseId], references: [id])
+  enrollments Enrollment[]
 
-  @@unique([userId, courseSlotId], map: "uq_course_selections_user_slot")
-  @@index([userId], map: "idx_course_selections_user_id")
-  @@index([courseSlotId], map: "idx_course_selections_slot_id")
-  @@map("course_selections")
+  @@index([moduleId], map: "idx_schedule_slots_module_id")
+  @@index([courseId], map: "idx_schedule_slots_course_id")
+  @@map("schedule_slots")
+}
+
+model Enrollment {
+  id             String           @id @default(uuid())
+  userId         String           @map("user_id")
+  scheduleSlotId String           @map("schedule_slot_id")
+  status         EnrollmentStatus @default(PENDING)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleSlot ScheduleSlot @relation(fields: [scheduleSlotId], references: [id], onDelete: Cascade)
+  attendances  Attendance[]
+  leaveRequests LeaveRequest[]
+
+  @@unique([userId, scheduleSlotId], map: "uq_enrollments_user_slot")
+  @@index([userId], map: "idx_enrollments_user_id")
+  @@index([scheduleSlotId], map: "idx_enrollments_schedule_slot_id")
+  @@map("enrollments")
+}
+
+model Attendance {
+  id                     String                  @id @default(uuid())
+  enrollmentId           String?                 @map("enrollment_id")
+  userId                 String                  @map("user_id")
+  scheduleSlotId         String                  @map("schedule_slot_id")
+  courseName             String?                 @map("course_name")
+  date                   DateTime                @db.Date
+  currency               Currency                @default(NZD)
+  feeDeducted            Decimal                 @default(0) @db.Decimal(10, 2) @map("fee_deducted")
+  balanceCnyAfter        Decimal                 @default(0) @map("balance_cny_after") @db.Decimal(10, 2)
+  balanceNzdAfter        Decimal                 @default(0) @map("balance_nzd_after") @db.Decimal(10, 2)
+  recordSource           RecordSource            @default(STUDENT) @map("record_source")
+  createdById            String?                 @map("created_by_id")
+  billingSelectionReason BillingSelectionReason? @map("billing_selection_reason")
+  createdAt              DateTime                @default(now()) @map("created_at")
+
+  enrollment Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy  User?       @relation("AttendanceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, scheduleSlotId, date], map: "uq_attendance_user_slot_date")
+  @@index([userId], map: "idx_attendance_user_id")
+  @@index([enrollmentId], map: "idx_attendance_enrollment_id")
+  @@index([scheduleSlotId], map: "idx_attendance_schedule_slot_id")
+  @@index([createdById], map: "idx_attendance_created_by_id")
+  @@map("attendances")
+}
+
+model LeaveRequest {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  enrollmentId String?  @map("enrollment_id")
+  date         DateTime @db.Date
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+
+  @@unique([enrollmentId, date], map: "uq_leave_enrollment_date")
+  @@index([userId], map: "idx_leave_user_id")
+  @@map("leave_requests")
+}
+
+model RechargeRecord {
+  id              String       @id @default(uuid())
+  userId          String       @map("user_id")
+  amount          Decimal      @db.Decimal(10, 2)
+  currency        Currency
+  prepaymentAfter Decimal      @db.Decimal(10, 2) @map("prepayment_after")
+  note            String?          @db.VarChar(500)
+  recordType      WalletRecordType @default(RECHARGE) @map("record_type")
+  recordSource    RecordSource     @default(ADMIN) @map("record_source")
+  batchId         String?          @map("batch_id")
+  relatedBatchId  String?          @map("related_batch_id")
+  balanceCnyAfter Decimal?         @map("balance_cny_after") @db.Decimal(10, 2)
+  balanceNzdAfter Decimal?         @map("balance_nzd_after") @db.Decimal(10, 2)
+  createdById     String           @map("created_by_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  user      User @relation("StudentRecharges", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User @relation("AdminRecharges", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_recharge_records_user_id")
+  @@index([createdById], map: "idx_recharge_records_created_by_id")
+  @@index([createdAt], map: "idx_recharge_records_created_at")
+  @@index([batchId], map: "idx_recharge_records_batch_id")
+  @@index([relatedBatchId], map: "idx_recharge_records_related_batch_id")
+  @@map("recharge_records")
 }

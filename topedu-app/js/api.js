@@ -87,7 +87,15 @@
             }
         }
 
-        return $.ajax(ajaxConfig);
+        return $.ajax(ajaxConfig).fail(function (xhr) {
+            if (xhr.status === 401 && !opts.skipAuth && getAccessToken()) {
+                clearAccessToken();
+                safeRemove(config.USER_KEY || "topedu.currentUser");
+                if (window.location.pathname.indexOf("login.html") === -1) {
+                    window.location.href = "login.html";
+                }
+            }
+        });
     }
 
     window.ApiClient = {

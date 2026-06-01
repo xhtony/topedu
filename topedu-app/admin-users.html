@@ -41,26 +41,201 @@
           <div role="tabpanel" class="tab-pane active" id="admin-users-tab">
             <div id="admin-users-page">
               <div class="row" style="margin-bottom: 15px;">
-                <div class="col-sm-8">
-                  <input id="admin-search-email" class="form-control" placeholder="Search by user email">
+                <div class="col-sm-9">
+                  <input id="admin-search-email" class="form-control" placeholder="Search by accout/name/email">
                 </div>
-                <div class="col-sm-4">
-                  <button id="admin-search-btn" class="button-default" type="button">Search</button>
+                <div class="col-sm-3 text-right">
+                  <button id="admin-add-user-btn" class="button-default" type="button" data-toggle="modal" data-target="#create-user-modal">Add Account</button>
                 </div>
               </div>
               <p id="admin-users-message" class="form-messege"></p>
-              <table class="table table-bordered">
+              <div class="form-inline" style="margin-bottom:12px;">
+                <label for="admin-role-filter" style="margin-right:8px;">Role</label>
+                <select id="admin-role-filter" class="form-control input-sm">
+                  <option value="">All</option>
+                  <option value="STUDENT">Student</option>
+                  <option value="TEACHER">Teacher</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+                <span id="admin-users-filter-count" class="text-danger" style="margin-left:10px;font-weight:600;"></span>
+              </div>
+              <div class="table-responsive admin-users-table-wrap">
+              <table class="table table-bordered admin-users-table">
                 <thead>
                   <tr>
+                    <th>Login Account</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
-                    <th>Email Verified</th>
-                    <th>Action</th>
+                    <th>Gender</th>
+                    <th>Prepayment</th>
+                    <th>Balance</th>
+                    <th class="admin-users-actions-col">Action</th>
                   </tr>
                 </thead>
                 <tbody id="admin-users-body"></tbody>
               </table>
+              </div>
+            </div>
+
+            <div class="modal fade" id="student-enrollment-modal" tabindex="-1" role="dialog">
+              <div class="modal-dialog modal-lg" role="document" style="width:95%;max-width:1100px;">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Assign courses (timetable)</h4>
+                  </div>
+                  <div class="modal-body student-enrollment-modal-body">
+                    <input type="hidden" id="enrollment-user-id" value="">
+                    <p id="enrollment-user-label" style="margin-bottom:12px;color:#666;font-size:13px;"></p>
+                    <p class="text-muted" style="font-size:12px;margin-bottom:12px;">Use each cell's dropdown to pick at most one course (or leave as None) per time slot. Saving registers the student for the chosen slots (approved).</p>
+                    <div id="student-enrollment-modules"></div>
+                    <p id="student-enrollment-message" class="form-messege"></p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="student-enrollment-save">Save</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal fade" id="student-session-records-modal" tabindex="-1" role="dialog">
+              <div class="modal-dialog modal-lg" role="document" style="width:95%;max-width:1100px;">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Class records</h4>
+                  </div>
+                  <div class="modal-body">
+                    <p id="session-records-user-label" style="margin-bottom:12px;color:#666;font-size:13px;"></p>
+                    <p class="text-muted" style="font-size:12px;margin-bottom:12px;">All scheduled class dates from enrolled courses, combined with sign-in, leave, and missed records. Use <strong>Action</strong> to sign in (fee currency chosen automatically from prepayment/balance) or record leave for past or today&apos;s classes.</p>
+                    <div class="form-inline" style="margin-bottom:12px;">
+                      <label for="session-records-status-filter" style="margin-right:8px;">Status</label>
+                      <select id="session-records-status-filter" class="form-control input-sm">
+                        <option value="">All</option>
+                        <option value="not_signed_in">Not signed in</option>
+                        <option value="attended">Signed in</option>
+                        <option value="leave">Leave</option>
+                      </select>
+                      <span id="session-records-filter-count" class="text-danger" style="margin-left:10px;font-weight:600;"></span>
+                    </div>
+                    <div id="student-session-records-body"></div>
+                    <p id="student-session-records-message" class="form-messege"></p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal fade" id="student-recharge-modal" tabindex="-1" role="dialog">
+              <div class="modal-dialog" role="document" style="width:95%;max-width:720px;">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Recharge</h4>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" id="recharge-user-id" value="">
+                    <p id="recharge-user-label" style="margin-bottom:12px;color:#666;font-size:13px;"></p>
+                    <p id="recharge-wallet-label" style="font-size:12px;color:#666;margin-bottom:16px;"></p>
+                    <div class="recharge-modal-panel recharge-modal-panel-recharge">
+                      <h5 class="recharge-modal-panel-title">Recharge</h5>
+                      <div class="form-group">
+                        <label for="recharge-amount-cny">Amount (CNY / 人民币)</label>
+                        <input id="recharge-amount-cny" type="number" class="form-control" min="0" step="0.01" placeholder="Optional">
+                      </div>
+                      <div class="form-group">
+                        <label for="recharge-amount-nzd">Amount (NZD / 纽币)</label>
+                        <input id="recharge-amount-nzd" type="number" class="form-control" min="0" step="0.01" placeholder="Optional">
+                      </div>
+                      <p class="help-block" style="font-size:12px;margin-top:-6px;">Fill one or both currencies. At least one amount is required.</p>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label for="recharge-note">Note (optional)</label>
+                        <input id="recharge-note" type="text" class="form-control" maxlength="500" placeholder="e.g. Bank transfer ref">
+                      </div>
+                      <p id="student-recharge-message" class="form-messege" style="margin-top:12px;margin-bottom:0;"></p>
+                    </div>
+                    <div class="recharge-modal-panel recharge-modal-panel-reversal">
+                      <h5 class="recharge-modal-panel-title">Reverse prepayment (冲销)</h5>
+                      <p class="help-block" style="font-size:12px;margin-top:0;">Deduct mistaken recharge from prepayment. Cannot exceed current prepayment.</p>
+                      <div class="form-group">
+                        <label for="reversal-amount-cny">Reverse amount (CNY / 人民币)</label>
+                        <input id="reversal-amount-cny" type="number" class="form-control" min="0" step="0.01" placeholder="Optional">
+                      </div>
+                      <div class="form-group">
+                        <label for="reversal-amount-nzd">Reverse amount (NZD / 纽币)</label>
+                        <input id="reversal-amount-nzd" type="number" class="form-control" min="0" step="0.01" placeholder="Optional">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label for="reversal-note">Note (optional)</label>
+                        <input id="reversal-note" type="text" class="form-control" maxlength="500" placeholder="e.g. Overcharge correction">
+                      </div>
+                      <input type="hidden" id="reversal-related-batch-id" value="">
+                      <p id="student-reversal-message" class="form-messege" style="margin-top:12px;margin-bottom:0;"></p>
+                    </div>
+                    <div class="recharge-modal-panel recharge-modal-panel-history">
+                      <h5 class="recharge-modal-panel-title">Wallet history</h5>
+                      <div id="recharge-records-body"><p class="text-muted">Loading...</p></div>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning" id="student-recharge-reverse-submit">Reverse</button>
+                    <button type="button" class="btn btn-primary" id="student-recharge-submit">Recharge</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal fade" id="create-user-modal" tabindex="-1" role="dialog">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Create Account</h4>
+                  </div>
+                  <div class="modal-body">
+                    <form id="create-user-form">
+                      <div class="form-group">
+                        <label for="cu-username">Login Account <span style="color:red;">*</span></label>
+                        <input id="cu-username" type="text" class="form-control" placeholder="Letters, numbers, underscores" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="cu-name">Name <span style="color:red;">*</span></label>
+                        <input id="cu-name" type="text" class="form-control" placeholder="Full name" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="cu-email">Email</label>
+                        <input id="cu-email" type="email" class="form-control" placeholder="Email address (optional, for notifications)">
+                      </div>
+                      <div class="form-group">
+                        <label for="cu-gender">Gender</label>
+                        <select id="cu-gender" class="form-control">
+                          <option value="">-- Select --</option>
+                          <option value="MALE">Male</option>
+                          <option value="FEMALE">Female</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="cu-role">Role <span style="color:red;">*</span></label>
+                        <select id="cu-role" class="form-control">
+                          <option value="STUDENT">Student</option>
+                          <option value="TEACHER">Teacher</option>
+                        </select>
+                      </div>
+                    </form>
+                    <p style="font-size:12px;color:#888;margin-top:10px;">Default password: <strong>12345678</strong>. Users must change password on first login. Student prepayment is added via <strong>Recharge</strong> after the account is created.</p>
+                    <p id="create-user-message" class="form-messege"></p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="create-user-submit">Save</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -78,24 +253,70 @@
 
           <div role="tabpanel" class="tab-pane" id="admin-courses-tab">
             <div id="admin-courses-page">
-              <div class="row" style="margin-bottom: 15px;">
-                <div class="col-sm-8">
-                  <input id="admin-course-name" class="form-control" placeholder="Course name">
-                </div>
-                <div class="col-sm-4">
-                  <button id="admin-course-add-btn" class="button-default" type="button">Add Course</button>
-                </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <h3 style="margin:0;">Course Management</h3>
+                <button id="admin-course-add-btn" class="button-default" type="button" data-toggle="modal" data-target="#create-course-modal">Add Course</button>
               </div>
               <p id="admin-courses-message" class="form-messege"></p>
               <table class="table table-bordered">
                 <thead>
                   <tr>
                     <th>Course Name</th>
+                    <th>Teacher</th>
+                    <th>Type</th>
+                    <th>Fee (CNY)</th>
+                    <th>Fee (NZD)</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="admin-courses-body"></tbody>
               </table>
+            </div>
+
+            <div class="modal fade" id="create-course-modal" tabindex="-1" role="dialog">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Add Course</h4>
+                  </div>
+                  <div class="modal-body">
+                    <form id="create-course-form">
+                      <div class="form-group">
+                        <label for="cc-name">Course Name <span style="color:red;">*</span></label>
+                        <input id="cc-name" type="text" class="form-control" placeholder="e.g. Mathematics" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="cc-teacher">Teacher <span style="color:red;">*</span></label>
+                        <select id="cc-teacher" class="form-control" required>
+                          <option value="">-- Select Teacher --</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="cc-type">Course Type <span style="color:red;">*</span></label>
+                        <select id="cc-type" class="form-control" required>
+                          <option value="GROUP">Group Class</option>
+                          <option value="PRIVATE">One-on-One</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="cc-fee-cny">Fee per Session (CNY / 人民币) <span style="color:red;">*</span></label>
+                        <input id="cc-fee-cny" type="number" class="form-control" min="0" step="0.01" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="cc-fee-nzd">Fee per Session (NZD / 纽币) <span style="color:red;">*</span></label>
+                        <input id="cc-fee-nzd" type="number" class="form-control" min="0" step="0.01" required>
+                      </div>
+                    </form>
+                    <p style="font-size:12px;color:#888;margin-top:10px;">Course name + Teacher combination must be unique.</p>
+                    <p id="create-course-message" class="form-messege"></p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="create-course-submit">Save</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

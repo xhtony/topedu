@@ -2250,7 +2250,8 @@ span.c-text {display: inline-block;}
 /*----------------------------------------*/
 body[data-auth-page="login"] .form-container input,
 body[data-auth-page="register"] .form-container input,
-body[data-auth-page="reset-password"] .form-container input {
+body[data-auth-page="reset-password"] .form-container input,
+body[data-auth-page="change-password"] .form-container input {
     background: transparent;
     border: 1px solid rgba(45, 62, 80, 0.35);
     color: #2d3e50;
@@ -2264,14 +2265,16 @@ body[data-auth-page="reset-password"] .form-container input {
 }
 body[data-auth-page="login"] .form-container input:focus,
 body[data-auth-page="register"] .form-container input:focus,
-body[data-auth-page="reset-password"] .form-container input:focus {
+body[data-auth-page="reset-password"] .form-container input:focus,
+body[data-auth-page="change-password"] .form-container input:focus {
     border-color: #07439D;
     box-shadow: none;
     outline: none;
 }
 body[data-auth-page="login"] .form-container input::placeholder,
 body[data-auth-page="register"] .form-container input::placeholder,
-body[data-auth-page="reset-password"] .form-container input::placeholder {
+body[data-auth-page="reset-password"] .form-container input::placeholder,
+body[data-auth-page="change-password"] .form-container input::placeholder {
     color: rgba(45, 62, 80, 0.75);
 }
 body[data-auth-page="register"] .form-container input:-webkit-autofill,
@@ -2281,7 +2284,11 @@ body[data-auth-page="register"] .form-container input:-webkit-autofill:active,
 body[data-auth-page="reset-password"] .form-container input:-webkit-autofill,
 body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:hover,
 body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:focus,
-body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:active {
+body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:active,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill:hover,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill:focus,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
     box-shadow: 0 0 0 1000px transparent inset !important;
     -webkit-text-fill-color: #2d3e50 !important;
@@ -2291,7 +2298,11 @@ body[data-auth-page="reset-password"] .form-container input:-webkit-autofill:act
 body[data-auth-page="login"] .form-container input:-webkit-autofill,
 body[data-auth-page="login"] .form-container input:-webkit-autofill:hover,
 body[data-auth-page="login"] .form-container input:-webkit-autofill:focus,
-body[data-auth-page="login"] .form-container input:-webkit-autofill:active {
+body[data-auth-page="login"] .form-container input:-webkit-autofill:active,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill:hover,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill:focus,
+body[data-auth-page="change-password"] .form-container input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
     box-shadow: 0 0 0 1000px transparent inset !important;
     -webkit-text-fill-color: #2d3e50 !important;
@@ -2619,4 +2630,79 @@ body[data-auth-page="login"] .form-container input:-webkit-autofill:active {
 
 .form-messege.success {
     color: #2f8f46 !important;
+}
+
+/* Enrollment modal: scroll long timetable grids inside the dialog */
+#student-enrollment-modal .student-enrollment-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+#student-enrollment-modules .admin-enrollment-table-wrap {
+    overflow-x: auto;
+}
+
+/* Admin user list: keep action buttons on one row */
+#admin-users-page .admin-users-table-wrap {
+    overflow-x: auto;
+}
+#admin-users-page .admin-users-actions-col {
+    white-space: nowrap;
+    min-width: 1px;
+}
+#admin-users-page .admin-users-actions {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+#admin-users-page .admin-users-actions .btn {
+    flex-shrink: 0;
+    margin: 0;
+    white-space: nowrap;
+    float: none;
+}
+
+/* Recharge modal: separate panels for recharge / reversal / history */
+#student-recharge-modal .recharge-modal-panel {
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+#student-recharge-modal .recharge-modal-panel:last-child {
+    margin-bottom: 0;
+}
+#student-recharge-modal .recharge-modal-panel-title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+}
+#student-recharge-modal .recharge-modal-panel-recharge {
+    background: #f0f7ff;
+    border: 1px solid #c5daf5;
+}
+#student-recharge-modal .recharge-modal-panel-recharge .recharge-modal-panel-title {
+    color: #07439D;
+}
+#student-recharge-modal .recharge-modal-panel-reversal {
+    background: #fff8e8;
+    border: 1px solid #f0d9a8;
+}
+#student-recharge-modal .recharge-modal-panel-reversal .recharge-modal-panel-title {
+    color: #b36b00;
+}
+#student-recharge-modal .recharge-modal-panel-history {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+}
+#student-recharge-modal .recharge-modal-panel-history .recharge-modal-panel-title {
+    color: #444;
+}
+
+/* Admin Timetable Editor: assigned course cell summary */
+#admin-timetable-page .timetable-picker-toggle.timetable-has-courses,
+#admin-timetable-page .timetable-picker-toggle.timetable-has-courses .timetable-picker-summary {
+    color: #6cc070;
+    font-size: 14px;
+    font-family: "montserratlight", sans-serif;
 }

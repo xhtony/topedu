@@ -35,10 +35,44 @@ Copy `.env.example` to `.env` and set values:
 
 ## 3) Create DB tables
 
+### Local development (Prisma Migrate)
+
 ```bash
 npx prisma generate
 npx prisma migrate dev --name init_auth
 ```
+
+### Production (raw SQL, no Prisma Migrate)
+
+Use the consolidated init script at `prisma/sql/init.sql` (matches current `schema.prisma`).
+
+1. Create an empty MySQL database.
+2. Run the SQL script (MySQL client, DMS, or cloud console):
+
+```bash
+mysql -h HOST -u USER -p DATABASE < prisma/sql/init.sql
+```
+
+3. Deploy the API as usual (`npx prisma generate` still runs at build time for the Prisma Client; **do not** run `prisma migrate deploy`).
+
+**Default admin:** created automatically on first API startup (`auth.service.ts`), not in SQL.
+
+**Schema changes:** after editing `schema.prisma`, regenerate the init script:
+
+```bash
+npm run prisma:sql-init
+```
+
+For an **existing** production database, generate an incremental ALTER script instead of re-running `init.sql`:
+
+```bash
+npx prisma migrate diff \
+  --from-url "$DATABASE_URL" \
+  --to-schema-datamodel prisma/schema.prisma \
+  --script
+```
+
+Review the output, save as e.g. `prisma/sql/upgrade-YYYYMMDD.sql`, then apply manually.
 
 ## 4) Run
 
@@ -96,4 +130,5 @@ This API matches the frontend calls in `topedu-app/js/auth.js`:
 - Keep frontend calls as `/api/auth/*` (global prefix is `api`)
 - Set Vercel environment variables for all keys from `.env.example`
 - Use `DATABASE_URL` and `DIRECT_URL` with your MySQL connection strings
-- Run migrations with `npx prisma migrate deploy` in CI/CD before or during release
+- **Option A (SQL):** apply `prisma/sql/init.sql` on first deploy; use `prisma migrate diff` for later upgrades (see section 3)
+- **Option B (Prisma Migrate):** run `npx prisma migrate deploy` in CI/CD before or during release

@@ -22,10 +22,16 @@
       <div class="container">
         <h2>Admin - User Detail</h2>
         <p><a href="admin-users.html">Back to user list</a></p>
+        <p class="text-muted" style="font-size:12px;margin-bottom:12px;">Click the pencil next to <strong>Name</strong> or <strong>Email</strong> to edit. Press Enter or click outside the field to save.</p>
         <div id="admin-user-info"></div>
         <p id="admin-user-detail-message" class="form-messege"></p>
-        <h3>User Timetable</h3>
+        <h3 id="admin-user-timetable-title">User Timetable</h3>
         <div id="admin-user-modules"></div>
+        <div id="admin-user-financial-section" style="display:none;margin-top:32px;">
+          <h3>Financial Ledger</h3>
+          <div id="admin-user-financial-summary" class="text-muted" style="font-size:13px;margin-bottom:12px;"></div>
+          <div id="admin-user-financial-ledger"></div>
+        </div>
       </div>
     </div>
   </div>

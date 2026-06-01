@@ -13,6 +13,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:sql-init": "bash scripts/generate-init-sql.sh",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {

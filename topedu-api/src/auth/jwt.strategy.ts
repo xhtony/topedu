@@ -9,9 +9,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private static getAccessSecret(configService: ConfigService): string {
     const secret = configService.get<string>('JWT_ACCESS_SECRET');
-    if (!secret) {
-      throw new Error('JWT_ACCESS_SECRET is required');
-    }
+    if (!secret) throw new Error('JWT_ACCESS_SECRET is required');
     return secret;
   }
 
@@ -28,14 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findById(payload.sub);
-    if (!user) {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-    };
+    if (!user) throw new UnauthorizedException('Invalid token');
+    return { id: user.id, username: user.username, email: user.email, name: user.name, role: user.role };
   }
 }

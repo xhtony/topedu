@@ -15,18 +15,11 @@ import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ResendVerificationDto } from './dto/resend-verification.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 type AuthenticatedRequest = Request & {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
+  user: { id: string; email: string; name: string };
 };
 
 @Controller('auth')
@@ -55,36 +48,6 @@ export class AuthController {
     res.clearCookie('refreshToken', this.getRefreshCookieOptions());
   }
 
-  @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
-  }
-
-  @Post('verify-email')
-  @HttpCode(HttpStatus.OK)
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.authService.verifyEmail(dto);
-  }
-
-  @Post('resend-verification')
-  @HttpCode(HttpStatus.OK)
-  resendVerification(@Body() dto: ResendVerificationDto) {
-    return this.authService.resendVerification(dto);
-  }
-
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto);
-  }
-
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
-  }
-
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -96,12 +59,8 @@ export class AuthController {
       ip: req.ip,
       userAgent: req.get('user-agent'),
     });
-
     this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
-    return {
-      accessToken: result.accessToken,
-      user: result.user,
-    };
+    return { accessToken: result.accessToken, user: result.user };
   }
 
   @Post('refresh')
@@ -112,12 +71,8 @@ export class AuthController {
       ip: req.ip,
       userAgent: req.get('user-agent'),
     });
-
     this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
-    return {
-      accessToken: result.accessToken,
-      user: result.user,
-    };
+    return { accessToken: result.accessToken, user: result.user };
   }
 
   @Post('logout')
@@ -134,6 +89,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   changePassword(@Req() req: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(req.user.id, dto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Get('me')
