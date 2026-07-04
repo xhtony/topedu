@@ -477,7 +477,7 @@ body {
     top: 0;
     transition: all 0.3s ease 0s;
     width: 100%;
-    z-index: 999999;
+    z-index: 999;
 }
 .bg-dark.header-logo-menu.sticker {background: #3F5771}
 .as-mainwrapper.wrapper-boxed .header-logo-menu.stick {
